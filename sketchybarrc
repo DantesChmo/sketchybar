@@ -44,7 +44,41 @@ for sid in $(aerospace list-workspaces --all); do
       script="$PLUGIN_DIR/aerospace.sh $sid"
 done
 
-sketchybar --add item clock right --set clock icon="⏰" update_freq=1 script="$PLUGIN_DIR/clock.sh"
+# Общие настройки фона-«пилюли» для правых виджетов
+widget_bg=(
+  background.color=0x44ffffff
+  background.corner_radius=6
+  background.height=26
+  background.drawing=on
+)
+
+sketchybar --add item clock right --set clock icon="⏰" width=115 align=center \
+    "${widget_bg[@]}" update_freq=1 script="$PLUGIN_DIR/clock.sh"
+
+sketchybar --add item sp_clock right --set sp_clock width=8 \
+    icon.drawing=off label.drawing=off background.drawing=off
+
+sketchybar --add item calendar right --set calendar icon="󰃭" width=133 align=center \
+    "${widget_bg[@]}" update_freq=30 script="$PLUGIN_DIR/calendar.sh"
+
+sketchybar --add item sp_calendar right --set sp_calendar width=8 \
+    icon.drawing=off label.drawing=off background.drawing=off
+
+sketchybar --add item battery right --set battery width=73 align=center \
+    "${widget_bg[@]}" update_freq=120 script="$PLUGIN_DIR/battery.sh" \
+  --subscribe battery power_source_change system_woke
+
+sketchybar --add item sp_battery right --set sp_battery width=8 \
+    icon.drawing=off label.drawing=off background.drawing=off
+
+sketchybar --add item cpu right --set cpu icon="󰻠" width=73 align=center \
+    "${widget_bg[@]}" update_freq=30 script="$PLUGIN_DIR/cpu.sh"
+
+sketchybar --add item sp_cpu right --set sp_cpu width=8 \
+    icon.drawing=off label.drawing=off background.drawing=off
+
+sketchybar --add item ram right --set ram icon="󰍛" width=73 align=center \
+    "${widget_bg[@]}" update_freq=30 script="$PLUGIN_DIR/ram.sh"
 
 # Обновляем бар при старте
 sketchybar --update
