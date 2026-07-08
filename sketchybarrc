@@ -4,11 +4,12 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 PLUGIN_DIR="$CONFIG_DIR/plugins"
+HELPER="$CONFIG_DIR/helper/sketchybar_metrics"   # бинарник: метрики + чтение раскладки
 
 # Настройка бара
 sketchybar --bar \
   position=top \
-  height=35 \
+  height=30 \
   blur_radius=30 \
   color=0x40000000
 
@@ -44,6 +45,20 @@ for sid in $(aerospace list-workspaces --all); do
       script="$PLUGIN_DIR/aerospace.sh $sid"
 done
 
+# Индикатор активного режима AeroSpace (resize и т.п.)
+# Скрыт по умолчанию, загорается из биндингов aerospace при входе в режим.
+# Иконку задаём через printf, т.к. Nerd Font глифы — символы Private Use Area.
+sketchybar --add item aerospace_mode left \
+  --set aerospace_mode \
+    icon="$(printf '\xef\x82\xb2')" \
+    label="RESIZE" \
+    icon.color=0xffffffff \
+    label.color=0xffffffff \
+    background.color=0xffed8796 \
+    background.corner_radius=5 \
+    background.height=20 \
+    drawing=off
+
 # Общие настройки фона-«пилюли» для правых виджетов
 widget_bg=(
   background.color=0x44ffffff
@@ -53,32 +68,61 @@ widget_bg=(
 )
 
 sketchybar --add item clock right --set clock icon="⏰" width=115 align=center \
-    "${widget_bg[@]}" update_freq=1 script="$PLUGIN_DIR/clock.sh"
+    "${widget_bg[@]}"
 
 sketchybar --add item sp_clock right --set sp_clock width=8 \
     icon.drawing=off label.drawing=off background.drawing=off
 
 sketchybar --add item calendar right --set calendar icon="󰃭" width=133 align=center \
-    "${widget_bg[@]}" update_freq=30 script="$PLUGIN_DIR/calendar.sh"
+    "${widget_bg[@]}"
 
 sketchybar --add item sp_calendar right --set sp_calendar width=8 \
     icon.drawing=off label.drawing=off background.drawing=off
 
-sketchybar --add item battery right --set battery width=73 align=center \
-    "${widget_bg[@]}" update_freq=120 script="$PLUGIN_DIR/battery.sh" \
-  --subscribe battery power_source_change system_woke
+sketchybar --add item battery right --set battery icon="󰁹" width=73 align=center \
+    "${widget_bg[@]}"
 
 sketchybar --add item sp_battery right --set sp_battery width=8 \
     icon.drawing=off label.drawing=off background.drawing=off
 
 sketchybar --add item cpu right --set cpu icon="󰻠" width=73 align=center \
-    "${widget_bg[@]}" update_freq=30 script="$PLUGIN_DIR/cpu.sh"
+    "${widget_bg[@]}"
 
 sketchybar --add item sp_cpu right --set sp_cpu width=8 \
     icon.drawing=off label.drawing=off background.drawing=off
 
 sketchybar --add item ram right --set ram icon="󰍛" width=73 align=center \
-    "${widget_bg[@]}" update_freq=30 script="$PLUGIN_DIR/ram.sh"
+    "${widget_bg[@]}"
+
+sketchybar --add item sp_ram right --set sp_ram width=8 \
+    icon.drawing=off label.drawing=off background.drawing=off
+
+# Раскладка клавиатуры (EN/RU/…).
+# sketchybar сам ловит системное уведомление о смене input source и превращает
+# его в событие language_change (фоновый процесс такие уведомления не получает,
+# а GUI-процесс бара — получает). По событию запускается `$HELPER --lang`,
+# который спрашивает у системы текущий язык и ставит label.
+# Иконка клавиатуры — через printf, т.к. глиф в Private Use Area.
+sketchybar --add event language_change AppleSelectedInputSourcesChangedNotification
+
+sketchybar --add item language right \
+    --subscribe language language_change \
+    --set language icon="$(printf '\xf3\xb0\x8c\x8c')" width=70 align=center \
+      "${widget_bg[@]}" script="$HELPER --lang"
+
+# ============================================
+# ЕДИНЫЙ ПРОВАЙДЕР МЕТРИК
+# ============================================
+# Один долгоживущий процесс держит mach-порт к бару и сам обновляет
+# clock/cpu/ram/battery/calendar — без единого fork/exec (ни top, ни date).
+# Собрать: (cd "$CONFIG_DIR/helper" && make)
+if [ -x "$HELPER" ]; then
+  pkill -f "$HELPER" 2>/dev/null          # убить прежний экземпляр при reload
+  "$HELPER" >/dev/null 2>&1 &              # запустить новый в фоне
+  disown
+else
+  echo "sketchybar: провайдер не собран — запусти 'make' в $CONFIG_DIR/helper" >&2
+fi
 
 # Обновляем бар при старте
 sketchybar --update

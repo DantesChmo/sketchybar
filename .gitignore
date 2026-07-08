@@ -1,0 +1,3 @@
+# Собранный бинарник провайдера метрик (собирается локально: cd helper && make)
+helper/sketchybar_metrics
+*.o
