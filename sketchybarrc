@@ -39,17 +39,21 @@ sketchybar --add event aerospace_workspace_change
 # Подложка есть у всех ячеек; активная инвертируется: белая пилюля, чёрный текст
 # (цвета переключает plugins/aerospace.sh с анимацией).
 for sid in $(aerospace list-workspaces --all); do
+  # Ховер ловим на зонах (не на bracket'е): мышь всегда над одной из них,
+  # а до подложки события доходят нестабильно. Подсвечивается вся пилюля.
   sketchybar --add item space.$sid.fs left \
+    --subscribe space.$sid.fs mouse.entered mouse.exited \
     --set space.$sid.fs \
       padding_left=4 padding_right=0 \
       icon.drawing=off \
       label.width=16 label.align=center \
       label.padding_left=0 label.padding_right=0 \
       label="" \
-      click_script="aerospace workspace $sid"
+      script="$PLUGIN_DIR/aerospace.sh $sid" \
+      click_script="$PLUGIN_DIR/aerospace.sh $sid click:fs"
 
   sketchybar --add item space.$sid left \
-    --subscribe space.$sid aerospace_workspace_change \
+    --subscribe space.$sid aerospace_workspace_change mouse.entered mouse.exited \
     --set space.$sid \
       padding_left=0 padding_right=0 \
       icon.drawing=off \
@@ -57,17 +61,19 @@ for sid in $(aerospace list-workspaces --all); do
       label.padding_left=0 label.padding_right=0 \
       label.color=0x99ffffff \
       label="$sid" \
-      click_script="aerospace workspace $sid" \
+      click_script="$PLUGIN_DIR/aerospace.sh $sid click:num" \
       script="$PLUGIN_DIR/aerospace.sh $sid"
 
   sketchybar --add item space.$sid.mode left \
+    --subscribe space.$sid.mode mouse.entered mouse.exited \
     --set space.$sid.mode \
       padding_left=0 padding_right=4 \
       icon.drawing=off \
       label.width=16 label.align=center \
       label.padding_left=0 label.padding_right=0 \
       label="" \
-      click_script="aerospace workspace $sid"
+      script="$PLUGIN_DIR/aerospace.sh $sid" \
+      click_script="$PLUGIN_DIR/aerospace.sh $sid click:mode"
 
   sketchybar --add bracket ws.$sid space.$sid.fs space.$sid space.$sid.mode \
     --set ws.$sid \

@@ -5,7 +5,7 @@
 BIN      = sketchybar_metrics
 SRC      = provider.c mach.c
 CFLAGS   = -std=c99 -O2 -Wall -Wno-deprecated-declarations
-FRAMEWORKS = -framework CoreFoundation -framework IOKit -framework Carbon
+FRAMEWORKS = -framework CoreFoundation -framework CoreGraphics -framework IOKit -framework Carbon
 
 $(BIN): $(SRC) mach.h
 	clang $(CFLAGS) $(SRC) -o $(BIN) $(FRAMEWORKS)
