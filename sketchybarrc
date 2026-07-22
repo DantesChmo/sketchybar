@@ -7,9 +7,11 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 HELPER="$CONFIG_DIR/helper/sketchybar_metrics"   # бинарник: метрики + чтение раскладки
 
 # Настройка бара
+# height = высота контента (пилюли 26px) + вертикальный «паддинг» по 3px
+# сверху и снизу: отдельного свойства паддинга у бара нет, контент центрируется.
 sketchybar --bar \
   position=top \
-  height=30 \
+  height=32 \
   blur_radius=30 \
   color=0x40000000
 
@@ -31,18 +33,53 @@ sketchybar --default "${default[@]}"
 # Регистрируем кастомный ивент от AeroSpace
 sketchybar --add event aerospace_workspace_change
 
-# Создаём элемент для каждого воркспейса
+# Каждый воркспейс — три элемента с фиксированными зонами (фулскрин | цифра | мод),
+# объединённые в bracket с общей «пилюлей». Ширины зон жёсткие, поэтому цифра
+# всегда ровно по центру, фулскрин строго слева, мод строго справа.
+# Подложка есть у всех ячеек; активная инвертируется: белая пилюля, чёрный текст
+# (цвета переключает plugins/aerospace.sh с анимацией).
 for sid in $(aerospace list-workspaces --all); do
+  sketchybar --add item space.$sid.fs left \
+    --set space.$sid.fs \
+      padding_left=4 padding_right=0 \
+      icon.drawing=off \
+      label.width=16 label.align=center \
+      label.padding_left=0 label.padding_right=0 \
+      label="" \
+      click_script="aerospace workspace $sid"
+
   sketchybar --add item space.$sid left \
     --subscribe space.$sid aerospace_workspace_change \
     --set space.$sid \
-      background.color=0x44ffffff \
-      background.corner_radius=5 \
-      background.height=20 \
-      background.drawing=off \
+      padding_left=0 padding_right=0 \
+      icon.drawing=off \
+      label.width=18 label.align=center \
+      label.padding_left=0 label.padding_right=0 \
+      label.color=0x99ffffff \
       label="$sid" \
       click_script="aerospace workspace $sid" \
       script="$PLUGIN_DIR/aerospace.sh $sid"
+
+  sketchybar --add item space.$sid.mode left \
+    --set space.$sid.mode \
+      padding_left=0 padding_right=4 \
+      icon.drawing=off \
+      label.width=16 label.align=center \
+      label.padding_left=0 label.padding_right=0 \
+      label="" \
+      click_script="aerospace workspace $sid"
+
+  sketchybar --add bracket ws.$sid space.$sid.fs space.$sid space.$sid.mode \
+    --set ws.$sid \
+      background.color=0x22ffffff \
+      background.corner_radius=6 \
+      background.height=26 \
+      background.drawing=on
+
+  # Гэп между пилюлями воркспейсов (как sp_* у виджетов справа)
+  sketchybar --add item space.$sid.gap left \
+    --set space.$sid.gap width=8 padding_left=0 padding_right=0 \
+      icon.drawing=off label.drawing=off background.drawing=off
 done
 
 # Индикатор активного режима AeroSpace (resize и т.п.)
@@ -55,8 +92,8 @@ sketchybar --add item aerospace_mode left \
     icon.color=0xffffffff \
     label.color=0xffffffff \
     background.color=0xffed8796 \
-    background.corner_radius=5 \
-    background.height=20 \
+    background.corner_radius=6 \
+    background.height=26 \
     drawing=off
 
 # Общие настройки фона-«пилюли» для правых виджетов
